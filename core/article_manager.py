@@ -368,14 +368,17 @@ class ArticleManager:
 
         return articles
 
-    def get_deep_analysis_prompt(self, article: Dict[str, Any], analysis_description: Optional[str] = None) -> Optional[str]:
+    def get_deep_analysis_prompt(self, article: Dict[str, Any], analysis_description: Optional[str] = None) -> tuple[Optional[str], bool]:
         """
         Generate a prompt for deep article analysis.
 
         Returns:
-            Prompt string for AI, or None if no analysis description available
+            Tuple of (prompt_string, is_fallback)
+            - prompt_string: The analysis prompt, or None if generation failed
+            - is_fallback: True if using generic fallback, False if using source-specific prompt
         """
         source_name = article.get('source_name', '')
+        is_fallback = False
 
         # Get analysis description from sources.json via source manager
         if not analysis_description:
@@ -386,10 +389,25 @@ class ArticleManager:
             if source_config and source_config.get('deep_analysis'):
                 analysis_description = source_config.get('analysis_description')
 
+        # If no source-specific description, generate fallback based on user profile
         if not analysis_description:
-            return None
+            from core.profile_manager import ProfileManager
+            profile_mgr = ProfileManager(db=self.db)
+            user_interests = profile_mgr.get_analysis_interests(limit=8)
 
-        # Simple, flexible prompt - let the model structure the output
+            analysis_description = f"""Gör en djupgående analys av artikeln med fokus på aspekter som är relevanta för läsarens intressen: {user_interests}.
+
+Strukturera analysen enligt följande:
+1. **Sammanfattning** - Kortfattad översikt av artikelns huvudbudskap
+2. **Nyckelinsikter** - De viktigaste poängerna och slutsatserna
+3. **Relevans** - Varför denna artikel är intressant utifrån läsarens intressen
+4. **Kontext** - Bakgrund och bredare sammanhang
+5. **Implikationer** - Vad detta kan betyda framåt
+
+Var konkret och citerar relevanta delar från artikeln."""
+            is_fallback = True
+
+        # Build the complete prompt
         prompt = f"""Analysera denna artikel från {source_name}.
 
 ARTIKEL:
@@ -401,7 +419,7 @@ ANALYSINSTRUKTION:
 
 Skriv din analys i tydlig, välstrukturerad markdown-format med rubriker och citat där det är relevant."""
 
-        return prompt
+        return prompt, is_fallback
 
     def save_deep_analysis(self, article_id: int, analysis_text: str) -> bool:
         """

@@ -209,6 +209,29 @@ class ProfileManager:
 
     # ===== Analysis & Insights =====
 
+    def get_analysis_interests(self, limit: int = 10) -> str:
+        """
+        Get user's top interests formatted for use in analysis prompts.
+
+        Returns a formatted string listing the user's main interests,
+        useful for generating fallback deep analysis prompts.
+        """
+        top_topics = self.get_top_topics(limit)
+
+        if not top_topics:
+            return "allmänna nyhetshändelser och samhällsfrågor"
+
+        # Format as comma-separated list
+        topic_names = [topic for topic, _ in top_topics]
+
+        if len(topic_names) == 1:
+            return topic_names[0]
+        elif len(topic_names) == 2:
+            return f"{topic_names[0]} och {topic_names[1]}"
+        else:
+            # Join all but last with commas, then add "och" before last
+            return f"{', '.join(topic_names[:-1])} och {topic_names[-1]}"
+
     def analyze_profile_evolution(self, days: int = 30) -> Dict[str, Any]:
         """Analyze how the profile has evolved over time."""
         # This would require historical tracking - simplified version

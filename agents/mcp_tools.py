@@ -321,8 +321,8 @@ def trigger_deep_analysis_tool(args: Dict[str, Any]) -> Dict[str, Any]:
     """
     Get deep analysis prompt for a specific article.
 
-    NOTE: This function has been deprecated. The analyzer no longer performs
-    direct API calls. Use the agent's built-in analysis capabilities instead.
+    Works for ANY article - uses source-specific prompt if available,
+    otherwise generates a fallback prompt based on user's interests.
 
     Returns the article info and prompt for the agent to execute.
     """
@@ -336,21 +336,29 @@ def trigger_deep_analysis_tool(args: Dict[str, Any]) -> Dict[str, Any]:
             "error": "Article not found"
         }
 
-    prompt = article_mgr.get_deep_analysis_prompt(article)
+    prompt, is_fallback = article_mgr.get_deep_analysis_prompt(article)
 
     if not prompt:
         return {
             "success": False,
             "article_id": article_id,
-            "error": "No deep analysis configuration for this source"
+            "error": "Failed to generate analysis prompt"
         }
+
+    # Build response message
+    if is_fallback:
+        message = "Deep analysis prompt generated based on user's interests (no source-specific configuration found). Execute this prompt and save result with save_deep_analysis()."
+    else:
+        message = "Deep analysis prompt generated using source-specific configuration. Execute this prompt and save result with save_deep_analysis()."
 
     return {
         "success": True,
         "article_id": article_id,
         "title": article.get('title', ''),
+        "source": article.get('source_name', ''),
         "prompt": prompt,
-        "message": "Deep analysis prompt generated. Agent should execute this prompt and save result with save_deep_analysis()."
+        "is_fallback": is_fallback,
+        "message": message
         }
 
 
@@ -911,7 +919,7 @@ TOOLS = {
     },
     "trigger_deep_analysis": {
         "function": trigger_deep_analysis_tool,
-        "description": "Get deep analysis prompt for a specific article (step 1 of 2). Returns a prompt that the agent should execute and then save with save_deep_analysis(). Use for Cornucopia articles to extract Lars Wilderäng's analyses.",
+        "description": "Get deep analysis prompt for ANY article (step 1 of 2). Works for all articles - uses source-specific analysis prompt if configured in sources.json (e.g., Cornucopia for Lars Wilderäng's analyses), otherwise generates a prompt based on user's interests. Returns a prompt that the agent should execute and then save with save_deep_analysis().",
         "parameters": {
             "type": "object",
             "properties": {
