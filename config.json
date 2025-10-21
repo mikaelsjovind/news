@@ -1,0 +1,34 @@
+{
+  "database_path": "news.db",
+  "max_articles_per_source": 50,
+  "fetch_interval_hours": 24,
+  "claude_model": "claude-haiku-4-5-20251001",
+  "max_tokens_per_summary": 300,
+  "max_tokens_deep_analysis": 2000,
+  "relevance_threshold": 0.6,
+  "user_interests": {
+    "description": "Jag är intresserad av teknik, särskilt AI och Apple-produkter. Följer elbilsutveckling med fokus på Tesla. Intresserad av svensk och internationell politik samt teknikstrategi och innovation.",
+    "topics": [
+      "Claude och AI-utveckling",
+      "Apple produkter och ekosystem",
+      "Tesla och elbilsutveckling",
+      "Svensk politik och samhällsfrågor",
+      "Teknikstrategi och innovation",
+      "Hållbarhet och klimat"
+    ],
+    "priorities": {
+      "high": [
+        "Claude och AI-utveckling",
+        "Tesla och elbilsutveckling",
+        "Apple produkter och ekosystem"
+      ],
+      "medium": [
+        "Teknikstrategi och innovation",
+        "Svensk politik och samhällsfrågor"
+      ],
+      "low": [
+        "Hållbarhet och klimat"
+      ]
+    }
+  }
+}

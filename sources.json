@@ -1,0 +1,64 @@
+[
+  {
+    "name": "SVT Nyheter Inrikes",
+    "url": "https://www.svt.se/nyheter/inrikes/rss.xml",
+    "article_count": 26
+  },
+  {
+    "name": "SVT Nyheter Utrikes",
+    "url": "https://www.svt.se/nyheter/utrikes/rss.xml",
+    "article_count": 24
+  },
+  {
+    "name": "Tesla Club Sweden",
+    "url": "https://teslaclubsweden.se/feed/",
+    "article_count": 10
+  },
+  {
+    "name": "MacStories",
+    "url": "https://macstories.net/feed/",
+    "article_count": 15
+  },
+  {
+    "name": "Daring Fireball",
+    "url": "https://daringfireball.com/feeds/main",
+    "article_count": 48
+  },
+  {
+    "name": "Allt om Elbil",
+    "url": "https://alltomelbil.se/feed/",
+    "article_count": 31
+  },
+  {
+    "name": "SVT Nyheter Väst",
+    "url": "https://www.svt.se/nyheter/lokalt/vast/rss.xml",
+    "article_count": 24
+  },
+  {
+    "name": "Simon Willison",
+    "url": "https://simonwillison.net/atom/everything/",
+    "article_count": 32
+  },
+  {
+    "name": "Carl Bildt",
+    "url": "https://carlbildt.wordpress.com/feed/",
+    "article_count": 20
+  },
+  {
+    "name": "Teknikveckan",
+    "url": "https://teknikveckan.se/feed/",
+    "article_count": 30
+  },
+  {
+    "name": "Cornucopia",
+    "url": "https://cornucopia.se/feed/",
+    "article_count": 12,
+    "deep_analysis": true,
+    "analysis_description": "Extrahera och strukturera Lars Wilderängs personliga analyser från krigsartikeln. Fokusera på: 1) Lars egna kommentarer och citat där han ger sin bedömning, 2) Analyser av maktskiften mellan Ukraina och Ryssland, 3) Strategiska och taktiska bedömningar om militära strategier, 4) Militära lärdomar om vapensystem och försvarsindustri, 5) Geopolitiska insikter om relationer mellan länder och maktpolitik. Presentera analysen som tydlig löpande text med rubriker och citat."
+  },
+  {
+    "name": "Stratechery",
+    "url": "https://stratechery.passport.online/feed/rss/CRA25K1Gutu8547XRrMoN",
+    "article_count": 50
+  }
+]

@@ -1,0 +1,123 @@
+[project]
+name = "news"
+version = "1.0.0"
+description = "AI-powered RSS news reader with Claude Agent SDK"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    {name = "Mikael Sjövind"}
+]
+
+dependencies = [
+    # Core AI & Agent Framework
+    "anthropic>=0.39.0",
+    "claude-agent-sdk>=0.1.4",
+
+    # RSS & Content Parsing
+    "feedparser>=6.0.11",
+
+    # Configuration & Environment
+    "python-dotenv>=1.0.0",
+
+    # CLI Framework & UI
+    "typer>=0.12.0",
+    "rich>=13.7.0",
+    "prompt-toolkit>=3.0.0",
+
+    # HTTP & Networking
+    "requests>=2.31.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.14.0",
+    "basedpyright>=1.24.0",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["core*", "agents*"]
+exclude = ["logs*", "venv*", ".venv*"]
+
+[tool.ruff]
+# Exclude directories
+exclude = [
+    ".git",
+    ".venv",
+    "venv",
+    "__pycache__",
+    "*.egg-info",
+    "logs",
+]
+
+# Set line length
+line-length = 100
+
+# Target Python version
+target-version = "py310"
+
+[tool.ruff.lint]
+# Enable specific rule categories
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort (import sorting)
+    "N",   # pep8-naming
+    "W",   # pycodestyle warnings
+]
+
+# Ignore specific rules
+ignore = [
+    "E501",  # line too long (we use line-length instead)
+]
+
+# Allow autofix for these rules
+fixable = [
+    "F401",  # unused imports
+    "F841",  # unused variables
+    "I001",  # import sorting
+]
+
+unfixable = []
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]  # Allow unused imports in __init__.py
+
+[tool.ruff.format]
+# Use double quotes for strings
+quote-style = "double"
+
+# Indent with spaces
+indent-style = "space"
+
+[tool.basedpyright]
+# Type checking mode - "standard" is balanced between strict and lenient
+typeCheckingMode = "standard"
+
+# Python version
+pythonVersion = "3.10"
+
+# Include/exclude patterns
+include = ["core", "agents", "main.py"]
+exclude = [
+    "**/__pycache__",
+    "**/.venv",
+    "**/venv",
+    "logs",
+]
+
+# Enable strict checking for specific features
+reportUnusedCallResult = "error"
+reportMissingTypeStubs = "none"  # Don't complain about missing type stubs for third-party libs
+reportUnknownMemberType = "none"  # Be lenient with third-party library types
+reportUnknownVariableType = "warning"
+reportUnknownArgumentType = "none"
+reportCallInDefaultInitializer = "error"
+reportAny = "warning"
+
+# Disable overly strict checks
+reportPrivateUsage = "none"
+reportConstantRedefinition = "none"
