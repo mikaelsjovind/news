@@ -192,8 +192,8 @@ Användare: "Visa artiklar från SVT Inrikes"
 VIKTIGT: Gissa ALDRIG på källnamn - lista alltid källor först när du är osäker!"""
 
 
-async def run_chat():
-    """Run interactive chat agent."""
+def create_chat_client():
+    """Create and configure a chat agent client (reusable across interfaces)."""
     _ = load_dotenv()
 
     db = Database()
@@ -202,12 +202,7 @@ async def run_chat():
     # Check API key
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:
-        console.print("[red]Error: ANTHROPIC_API_KEY not found[/red]")
-        console.print("\nThe Claude Agent SDK requires an Anthropic API key.")
-        console.print("Get your API key from: https://console.anthropic.com/")
-        console.print("Then add it to your .env file:")
-        console.print("  ANTHROPIC_API_KEY=sk-ant-...")
-        raise ValueError("ANTHROPIC_API_KEY not found")
+        raise ValueError("ANTHROPIC_API_KEY not found in environment")
 
     # Load model from config
     import json
@@ -218,18 +213,8 @@ async def run_chat():
     except (FileNotFoundError, json.JSONDecodeError):
         model = 'claude-haiku-4-5-20251001'  # Default fallback
 
-    console.print("\n[bold blue]🤖 Agent-driven Nyhetsläsare[/bold blue]\n")
-    console.print("Chatten med AI-agenten om dina nyheter.")
-    console.print("Agenten har tillgång till alla systemverktyg och kan:")
-    console.print("  - Hämta och visa artiklar")
-    console.print("  - Spara feedback och lära från den")
-    console.print("  - Uppdatera din profil automatiskt")
-    console.print("  - Ge insikter och förslag")
-    console.print("\n[dim]Skriv 'exit' för att avsluta[/dim]\n")
-
     # Create MCP server
     mcp_server = create_mcp_server()
-    console.print(f"[green]✓[/green] Loaded {len(CHAT_TOOLS)} tools")
 
     # Setup options
     allowed_tools = [f"mcp__news_tools__{tool_name}" for tool_name in CHAT_TOOLS]
@@ -248,10 +233,35 @@ async def run_chat():
         model=model
     )
 
+    return ClaudeSDKClient(options=options)
+
+
+async def run_chat():
+    """Run interactive chat agent (CLI interface)."""
+    console.print("\n[bold blue]🤖 Agent-driven Nyhetsläsare[/bold blue]\n")
+    console.print("Chatten med AI-agenten om dina nyheter.")
+    console.print("Agenten har tillgång till alla systemverktyg och kan:")
+    console.print("  - Hämta och visa artiklar")
+    console.print("  - Spara feedback och lära från den")
+    console.print("  - Uppdatera din profil automatiskt")
+    console.print("  - Ge insikter och förslag")
+    console.print("\n[dim]Skriv 'exit' för att avsluta[/dim]\n")
+
+    try:
+        client = create_chat_client()
+    except ValueError as e:
+        console.print(f"[red]Error: {e}[/red]")
+        console.print("\nThe Claude Agent SDK requires an Anthropic API key.")
+        console.print("Get your API key from: https://console.anthropic.com/")
+        console.print("Then add it to your .env file:")
+        console.print("  ANTHROPIC_API_KEY=sk-ant-...")
+        return
+
+    console.print(f"[green]✓[/green] Loaded {len(CHAT_TOOLS)} tools")
     console.print("[dim]Använder Agent SDK med Claude Code CLI[/dim]\n")
 
     # Create client and run conversation
-    async with ClaudeSDKClient(options=options) as client:
+    async with client:
         # Startup routine
         startup_prompt = """Kör följande startup-rutin:
 

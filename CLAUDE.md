@@ -34,11 +34,15 @@ cp .env.example .env
 
 ### Common Commands
 ```bash
-# Launch interactive chat agent (24 tools)
+# Launch interactive chat agent (CLI interface)
 # The chat agent handles ALL user interactions: reading, feedback, sources, stats
 python main.py chat
 
-# Run background fetch + analysis (5 tools)
+# Launch Slack bot interface (same agent, different I/O)
+# Requires Slack app configuration in .env
+python main.py slack
+
+# Run background fetch + analysis (CLI interface)
 # Called automatically by scheduler every 30 minutes
 python main.py background
 
@@ -107,13 +111,24 @@ news/
 │   ├── profile_manager.py    # User profile + learning
 │   └── feedback_manager.py   # Feedback + statistics
 │
-├── agents/                   # Two simple agents
-│   ├── chat.py              # Interactive agent (24 tools)
-│   ├── analyzer.py          # Analyzer agent (5 tools)
-│   └── mcp_tools.py         # 25 MCP tool definitions
+├── agents/                   # Agent implementations (business logic)
+│   ├── chat.py              # Chat agent + create_chat_client() export
+│   ├── analyzer.py          # Analyzer agent + create_analyzer_client() export
+│   └── mcp_tools.py         # 26 MCP tool definitions
 │
-└── main.py                  # Minimal CLI (4 commands: init, chat, background, cleanup)
+├── interfaces/               # I/O adapters (thin wrappers around agents)
+│   ├── chat_cli.py          # CLI interface for chat agent
+│   ├── chat_slack.py        # Slack interface for chat agent (Socket Mode)
+│   └── fetch_and_analyze_cli.py  # CLI for background fetch + analysis
+│
+└── main.py                  # Entry point (5 commands: init, chat, slack, background, cleanup)
 ```
+
+**Architecture Pattern: Separation of Concerns**
+- **core/** - Data access and business logic (NO API calls, NO I/O)
+- **agents/** - Agent implementations with MCP tools (exports reusable clients)
+- **interfaces/** - I/O adapters for different interaction modes (CLI, Slack, etc.)
+- **main.py** - Command router that delegates to interfaces
 
 **Feature-Based Managers**:
 - **SourceManager**: RSS sources configuration (add/remove/list sources.json) (implements own SQL)
@@ -149,6 +164,32 @@ news/
 - **Safety**: Analyzer agent can't modify sources or profile
 - **Clarity**: Each agent has a clear, focused purpose
 - **Tool isolation**: Prevents autonomous agent from making destructive changes
+
+**Agent Reusability**:
+- Both agents export client creation functions: `create_chat_client()` and `create_analyzer_client()`
+- These functions are imported by interfaces to create agent instances
+- Same agent business logic works across different I/O modes (CLI, Slack, etc.)
+
+### The Three Interfaces
+
+**CLI Chat Interface** (`interfaces/chat_cli.py`):
+- Thin wrapper around `agents/chat.run_chat()`
+- Provides interactive terminal-based conversations
+- Usage: `python main.py chat`
+
+**Slack Chat Interface** (`interfaces/chat_slack.py`):
+- Uses same chat agent via `create_chat_client()`
+- Connects to Slack via Socket Mode (WebSocket - no public URL needed)
+- **Security**: Only user with matching `SLACK_ALLOWED_USER_ID` can use bot
+- Handles both @mentions and direct messages
+- Usage: `python main.py slack`
+- **Critical for privacy**: 35 people in workspace but only authorized user can access bot
+
+**Background Fetch & Analyze Interface** (`interfaces/fetch_and_analyze_cli.py`):
+- Combines RSS fetching with autonomous analysis
+- Calls `FeedFetcher.fetch_all()` then `agents/analyzer.run_analysis()`
+- Used by scheduler (launchd) every 30 minutes
+- Usage: `python main.py background`
 
 ### The 26 MCP Tools
 
@@ -399,14 +440,86 @@ Each manager has a clear, focused responsibility:
 ]
 ```
 
+### .env (Environment Variables)
+
+**Required for all interfaces:**
+```bash
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+**Additional for Slack interface:**
+```bash
+SLACK_BOT_TOKEN=xoxb-...
+SLACK_APP_TOKEN=xapp-...
+SLACK_ALLOWED_USER_ID=U1234567890
+```
+
+See `.env.example` for detailed configuration instructions.
+
+## Slack Bot Setup
+
+If you want to use the Slack interface (`python main.py slack`):
+
+### 1. Create Slack App
+1. Go to https://api.slack.com/apps
+2. Click "Create New App" → "From scratch"
+3. Name: "News Bot" (or whatever you prefer)
+4. Select your workspace
+
+### 2. Configure Bot Permissions
+1. Navigate to "OAuth & Permissions"
+2. Add these Bot Token Scopes:
+   - `app_mentions:read` - Read messages that mention your bot
+   - `chat:write` - Send messages
+   - `im:history` - View direct messages
+   - `im:read` - Read direct message info
+   - `im:write` - Write direct messages
+3. Click "Install to Workspace"
+4. Copy the "Bot User OAuth Token" (starts with `xoxb-`)
+   - Add to `.env` as `SLACK_BOT_TOKEN`
+
+### 3. Enable Socket Mode
+1. Navigate to "Socket Mode"
+2. Enable Socket Mode
+3. Generate an App-Level Token:
+   - Name: "Socket Mode Token"
+   - Scope: `connections:write`
+4. Copy the token (starts with `xapp-`)
+   - Add to `.env` as `SLACK_APP_TOKEN`
+
+### 4. Subscribe to Events
+1. Navigate to "Event Subscriptions"
+2. Enable Events
+3. Subscribe to Bot Events:
+   - `app_mention` - When your bot is @mentioned
+   - `message.im` - Direct messages to your bot
+
+### 5. Find Your User ID
+1. In Slack, click your profile picture
+2. Select "Profile"
+3. Click "..." (More)
+4. Select "Copy member ID"
+5. Add to `.env` as `SLACK_ALLOWED_USER_ID`
+
+**This is critical for security** - only you can use the bot even though 35 people can see it in the workspace.
+
+### 6. Start the Bot
+```bash
+python main.py slack
+```
+
+The bot will connect via WebSocket (Socket Mode) - no public URL needed!
+
 ## Testing Workflow
 
 No formal test suite currently. Manual testing workflow:
 
-1. **Test chat agent**: `python main.py chat` → All user interactions (reading, feedback, sources, stats)
-2. **Test background**: `python main.py background` → Fetch + analysis in one command
-3. **Check database**: `sqlite3 news.db "SELECT COUNT(*) FROM articles"`
-4. **Test cleanup**: `python main.py cleanup --days 30`
+1. **Test CLI chat**: `python main.py chat` → Terminal interactions
+2. **Test Slack chat**: `python main.py slack` → Slack interactions (same agent!)
+3. **Test background**: `python main.py background` → Fetch + analysis
+4. **Check database**: `sqlite3 news.db "SELECT COUNT(*) FROM articles"`
+5. **Test cleanup**: `python main.py cleanup --days 30`
+6. **Test security**: Have unauthorized user try to use Slack bot (should be rejected)
 
 ## Common Development Patterns
 

@@ -5,7 +5,6 @@ AI-powered news reader with personalized filtering and summarization.
 """
 
 import os
-from datetime import datetime
 from typing import Annotated, Any
 
 import typer
@@ -88,7 +87,7 @@ def cleanup(
 @app.command()
 def chat():
     """
-    Launch interactive AI agent chat (25 tools).
+    Launch interactive AI agent chat (CLI interface).
 
     Provides full access to the news system via natural conversation.
     Can fetch articles, manage profile, give statistics, handle feedback, and more.
@@ -99,11 +98,11 @@ def chat():
     Get API key from: https://console.anthropic.com/
     """
     try:
-        from agents.chat import main as chat_main
-        chat_main()
+        from interfaces.chat_cli import main as chat_cli_main
+        chat_cli_main()
     except ImportError as e:
         console.print(f"[red]Error: {e}[/red]")
-        console.print("Make sure all dependencies are installed: pip install -r requirements.txt")
+        console.print("Make sure all dependencies are installed: pip install -e .")
     except Exception as e:
         console.print(f"[red]Error: {e}[/red]")
         raise
@@ -112,7 +111,7 @@ def chat():
 @app.command()
 def background():
     """
-    Run autonomous background analysis (6 tools only).
+    Run autonomous background fetch and analysis.
 
     This command is called by the scheduler every 30 minutes.
     Fetches RSS feeds and analyzes all unanalyzed articles via Claude Agent SDK.
@@ -120,51 +119,44 @@ def background():
     Requires Anthropic API credits for analysis.
     Manual usage: python main.py background
     """
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
     try:
-        console.print(f"\n[bold blue]Background Fetch + Analysis[/bold blue] - {timestamp}\n")
-
-        # 1. Fetch RSS feeds
-        console.print("[bold]Step 1: Fetching RSS feeds...[/bold]")
-        from core.feed_fetcher import FeedFetcher
-        fetcher = FeedFetcher()
-        result = fetcher.fetch_all()
-
-        console.print("[green]✓[/green] Fetch complete!")
-        console.print(f"  Sources checked: {result['total_sources']}")
-        console.print(f"  Articles found: {result['total_fetched']}")
-        console.print(f"  New articles: {result['total_new']}")
-
-        errors: list[str] = result.get('errors', [])  # type: ignore[assignment]
-        if errors:
-            console.print("[yellow]Warnings:[/yellow]")
-            for error in errors:
-                console.print(f"  {error}")
-
-        # 2. Check if analysis needed
-        analyzer = ArticleManager()
-        unanalyzed = analyzer.get_unanalyzed_articles()
-
-        if not unanalyzed:
-            console.print("\n[green]✓[/green] No unanalyzed articles found")
-            console.print("\n[green]✓[/green] Background task complete\n")
-            return
-
-        console.print(f"\n[bold]Step 2: Analyzing {len(unanalyzed)} articles...[/bold]")
-        console.print("[dim]Launching autonomous analyzer via Claude Agent SDK (uses API credits)[/dim]\n")
-
-        # 3. Run autonomous analysis
-        from agents.analyzer import main as analyzer_main
-        analyzer_main()
-
-        console.print("\n[green]✓[/green] Background fetch + analysis complete\n")
-
+        from interfaces.fetch_and_analyze_cli import main as background_main
+        background_main()
+    except ImportError as e:
+        console.print(f"[red]Error: {e}[/red]")
+        console.print("Make sure all dependencies are installed: pip install -e .")
     except Exception as e:
-        console.print(f"\n[red]Error during background task: {e}[/red]\n")
-        import traceback
-        traceback.print_exc()
-        raise typer.Exit(1)
+        console.print(f"[red]Error: {e}[/red]")
+        raise
+
+
+@app.command()
+def slack():
+    """
+    Launch Slack bot interface.
+
+    Connects to your Slack workspace via Socket Mode (WebSocket).
+    Allows you to interact with the chat agent via Slack messages.
+
+    SECURITY: Only the user specified in SLACK_ALLOWED_USER_ID can use the bot.
+
+    Requires:
+    - SLACK_BOT_TOKEN in .env (xoxb-...)
+    - SLACK_APP_TOKEN in .env (xapp-...)
+    - SLACK_ALLOWED_USER_ID in .env (your Slack user ID)
+    - Anthropic API key and credits
+    """
+    try:
+        import asyncio
+
+        from interfaces.chat_slack import main as slack_main
+        asyncio.run(slack_main())
+    except ImportError as e:
+        console.print(f"[red]Error: {e}[/red]")
+        console.print("Make sure slack-bolt is installed: pip install -e .")
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+        raise
 
 
 if __name__ == "__main__":

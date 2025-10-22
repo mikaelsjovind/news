@@ -127,12 +127,13 @@ När du är klar, ge en kort sammanfattning:
 """
 
 
-async def run_analysis():
-    """Run autonomous analysis."""
+def create_analyzer_client():
+    """Create and configure an analyzer agent client (reusable across interfaces)."""
+    from dotenv import load_dotenv
+    _ = load_dotenv()
+
     db = Database()
     profile = ProfileManager(db=db)
-
-    console.print("[bold blue]Starting autonomous analysis...[/bold blue]")
 
     # Load model from config
     import json
@@ -145,7 +146,6 @@ async def run_analysis():
 
     # Create MCP server
     mcp_server = create_mcp_server()
-    console.print(f"[green]✓[/green] Loaded {len(ANALYZER_TOOLS)} tools")
 
     # Setup options
     allowed_tools = [f"mcp__news_tools__{tool_name}" for tool_name in ANALYZER_TOOLS]
@@ -164,8 +164,18 @@ async def run_analysis():
         model=model
     )
 
+    return ClaudeSDKClient(options=options)
+
+
+async def run_analysis():
+    """Run autonomous analysis (CLI interface)."""
+    console.print("[bold blue]Starting autonomous analysis...[/bold blue]")
+
+    client = create_analyzer_client()
+    console.print(f"[green]✓[/green] Loaded {len(ANALYZER_TOOLS)} tools")
+
     # Create client and run analysis
-    async with ClaudeSDKClient(options=options) as client:
+    async with client:
         # Send analysis task
         analysis_task = """Analysera alla olästa artiklar i systemet.
 

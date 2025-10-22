@@ -24,6 +24,10 @@ dependencies = [
     "rich>=13.7.0",
     "prompt-toolkit>=3.0.0",
 
+    # Slack Integration (for Slack interface)
+    "slack-bolt>=1.26.0",
+    "aiohttp>=3.13.0",
+
     # HTTP & Networking
     "requests>=2.31.0",
 ]
@@ -39,7 +43,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["core*", "agents*"]
+include = ["core*", "agents*", "interfaces*"]
 exclude = ["logs*", "venv*", ".venv*"]
 
 [tool.ruff]
@@ -101,7 +105,7 @@ typeCheckingMode = "standard"
 pythonVersion = "3.10"
 
 # Include/exclude patterns
-include = ["core", "agents", "main.py"]
+include = ["core", "agents", "interfaces", "main.py"]
 exclude = [
     "**/__pycache__",
     "**/.venv",
